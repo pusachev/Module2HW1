@@ -7,4 +7,6 @@ Logger logger = Logger.GetInstance();
 logger.Info("Test");
 logger.Warning("Test 2");
 
+logger.Flush();
+
 Console.ReadLine();

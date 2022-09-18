@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Configuration;
+using Module2HW6.Factory;
 
 namespace Module2HW6.Logger
 {
@@ -12,14 +14,28 @@ namespace Module2HW6.Logger
             Debug = 4
         }
 
-        private readonly string _filename = "system.log";
-        private StreamWriter _writer;
+        private int _counter = 0;
+        private int _batchSize;
+        private LogItem[] _logItems;
+
+        private LogItemFactory _factory;
+
+        private readonly string _path;
 
         private static Logger? _instance;
 
         private Logger()
         {
-            _writer = new StreamWriter(_filename);
+            _path  = "system.log";
+            _factory   = new LogItemFactory();
+            _batchSize = 1;
+            _logItems  = new LogItem[_batchSize];
+            var appSettings = ConfigurationManager.AppSettings;
+        }
+
+        ~Logger()
+        {
+            Flush();
         }
 
         public static Logger GetInstance()
@@ -54,42 +70,62 @@ namespace Module2HW6.Logger
 
         private void Log(Level Level, string Message, Object? Context = null)
         {
-            string logMessage;
+            string type;
 
             switch (Level)
             {
                 case Level.Info:
                 {
-                    logMessage = "INFO: ";
+                    type = "INFO";
                     break;
                 }
                 case Level.Warn:
                 {
-                    logMessage = "WARN: ";
+                    type = "WARN";
                     break;
                 }
                 case Level.Error:
                 {
-                    logMessage = "ERROR: ";
+                    type = "ERROR";
                     break;
                 }
                 case Level.Debug:
                 {
-                    logMessage = "DEBUG: ";
+                    type = "DEBUG";
                     break;
                 }
                 default:
                 {
-                    logMessage = "DEBUG: ";
+                    type = "DEBUG: ";
                     break;
                  }
             }
 
-            logMessage = logMessage + Message;
-            logMessage = logMessage + " | " + DateTime.Now.ToString();
+            try
+            {
+                _logItems[_counter] = _factory.Create(type, Message);
+            }
+            catch (System.IndexOutOfRangeException e)
+            {
+                Flush();
+                _logItems[_counter] = _factory.Create(type, Message);
+            }
 
+            
 
-            Console.WriteLine(logMessage);
+            Console.WriteLine(_logItems[_counter++]);
+        }
+
+        public void Flush()
+        {
+            _counter = 0;
+
+            foreach (LogItem logItem in _logItems)
+            {
+                File.AppendAllText(_path, logItem.ToString());
+            }
+
+            _logItems = new LogItem[_batchSize];
         }
     }
 }
