@@ -1,12 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Module2HW6.Logger;
+using Module2HW6;
+using System.Configuration;
 
-Logger logger = Logger.GetInstance();
+Starter starter = new Starter();
 
-logger.Info("Test");
-logger.Warning("Test 2");
-
-logger.Flush();
+starter.Run();
 
 Console.ReadLine();

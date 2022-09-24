@@ -6,6 +6,9 @@ namespace Module2HW6.Logger
 {
     public sealed class Logger
     {
+        private const string DEFAULT_PATH = "system.log";
+        private const string DEFAULT_BATCH_SIZE = "100";
+
         private enum Level : byte
         {
             Info = 1,
@@ -26,11 +29,13 @@ namespace Module2HW6.Logger
 
         private Logger()
         {
-            _path  = "system.log";
+            _path = ConfigurationManager.AppSettings
+                                        .Get("system_log") ?? DEFAULT_PATH;
             _factory   = new LogItemFactory();
-            _batchSize = 1;
+            _batchSize = Convert.ToInt32(
+                ConfigurationManager.AppSettings.Get("batch_size") ?? DEFAULT_BATCH_SIZE
+            );
             _logItems  = new LogItem[_batchSize];
-            var appSettings = ConfigurationManager.AppSettings;
         }
 
         ~Logger()
@@ -111,9 +116,10 @@ namespace Module2HW6.Logger
                 _logItems[_counter] = _factory.Create(type, Message);
             }
 
-            
-
-            Console.WriteLine(_logItems[_counter++]);
+#if DEBUG
+            Console.WriteLine(_logItems[_counter]);
+#endif
+            _counter++;
         }
 
         public void Flush()
@@ -122,6 +128,10 @@ namespace Module2HW6.Logger
 
             foreach (LogItem logItem in _logItems)
             {
+                if (null == logItem) {
+                    break;
+                }
+
                 File.AppendAllText(_path, logItem.ToString());
             }
 
